@@ -1,6 +1,6 @@
 # ogkr-rs
 
-Parser for the chart file of an anime, bullet hell, rhythm game.
+Parser for the chart file from an anime, bullet hell, rhythm game.
 
 ## Important Notes
 * Please refrain from discussing this project in other public sites.

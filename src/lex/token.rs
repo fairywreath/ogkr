@@ -2,10 +2,14 @@ use crate::lex::LexError;
 
 use super::{command::*, cursor::Cursor, Result};
 
+/// These tokens are not strictly lexical and and conforms to the syntax of a command line.
+/// The "lexer" here handles syntax within a single line while the "parser" will handle the overall
+/// grammatical and syntatical meaning accross lines.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Token {
     SectionName,
 
+    // Header.
     Version(Version),
     Creator(Creator),
     BpmDefinition(BpmDefinition),
@@ -18,6 +22,9 @@ pub enum Token {
     HardBulletDamage(HardBulletDamage),
     DangerBulletDamage(DangerBulletDamage),
     BeamDamage(BeamDamage),
+    ProgJudgeBpm(ProgJudgeBpm),
+
+    // Totals.
     TotalNotes(TotalNotes),
     TotalTapNotes(TotalTapNotes),
     TotalHoldNotes(TotalHoldNotes),
@@ -25,21 +32,31 @@ pub enum Token {
     TotalSideHoldNotes(TotalSideHoldNotes),
     TotalFlickNotes(TotalFlickNotes),
     TotalBellNotes(TotalBellNotes),
-    ProgJudgeBpm(ProgJudgeBpm),
+
+    // Bullet palette.
     BulletPalette(BulletPalette),
+
+    // Not used.
     Btp(Btp),
-    CommandTime(CommandTime),
+
+    // Composition
     BpmChange(BpmChange),
     MeterChange(MeterChange),
-    ClickSound(ClickSound),
     Soflan(Soflan),
+
+    // Click sounds.
+    ClickSound(ClickSound),
+
+    // Enemy wave assignment.
     EnemySet(EnemySet),
-    WallLeftStart(WallPointPosition),
-    WallLeftNext(WallPointPosition),
-    WallLeftEnd(WallPointPosition),
-    WallRightStart(WallPointPosition),
-    WallRightNext(WallPointPosition),
-    WallRightEnd(WallPointPosition),
+
+    // Walls and lanes.
+    WallLeftStart(WallPoint),
+    WallLeftNext(WallPoint),
+    WallLeftEnd(WallPoint),
+    WallRightStart(WallPoint),
+    WallRightNext(WallPoint),
+    WallRightEnd(WallPoint),
     LaneLeftStart(LanePoint),
     LaneLeftNext(LanePoint),
     LaneLeftEnd(LanePoint),
@@ -57,13 +74,19 @@ pub enum Token {
     EnemyLaneEnd(EnemyLanePoint),
     LaneDisappearance(LaneEvent),
     LaneBlock(LaneEvent),
+
+    // Bullets.
     Bullet(Bullet),
+
+    // Beams.
     BeamStart(BeamPoint),
     BeamNext(BeamPoint),
     BeamEnd(BeamPoint),
     ObliqueBeamStart(ObliqueBeamPoint),
     ObliqueBeamNext(ObliqueBeamPoint),
     ObliqueBeamEnd(ObliqueBeamPoint),
+
+    // Notes.
     Bell(Bell),
     Flick(Flick),
     CriticalFlick(Flick),
@@ -118,12 +141,12 @@ impl Token {
                 "CLK" => Self::ClickSound(ClickSound::from_cursor(cursor)?),
                 "SFL" => Self::Soflan(Soflan::from_cursor(cursor)?),
                 "EST" => Self::EnemySet(EnemySet::from_cursor(cursor)?),
-                "WLS" => Self::WallLeftStart(WallPointPosition::from_cursor(cursor)?),
-                "WLN" => Self::WallLeftNext(WallPointPosition::from_cursor(cursor)?),
-                "WLE" => Self::WallLeftEnd(WallPointPosition::from_cursor(cursor)?),
-                "WRS" => Self::WallRightStart(WallPointPosition::from_cursor(cursor)?),
-                "WRN" => Self::WallRightNext(WallPointPosition::from_cursor(cursor)?),
-                "WRE" => Self::WallRightEnd(WallPointPosition::from_cursor(cursor)?),
+                "WLS" => Self::WallLeftStart(WallPoint::from_cursor(cursor)?),
+                "WLN" => Self::WallLeftNext(WallPoint::from_cursor(cursor)?),
+                "WLE" => Self::WallLeftEnd(WallPoint::from_cursor(cursor)?),
+                "WRS" => Self::WallRightStart(WallPoint::from_cursor(cursor)?),
+                "WRN" => Self::WallRightNext(WallPoint::from_cursor(cursor)?),
+                "WRE" => Self::WallRightEnd(WallPoint::from_cursor(cursor)?),
                 "LLS" => Self::LaneLeftStart(LanePoint::from_cursor(cursor)?),
                 "LLN" => Self::LaneLeftNext(LanePoint::from_cursor(cursor)?),
                 "LLE" => Self::LaneLeftEnd(LanePoint::from_cursor(cursor)?),
@@ -502,12 +525,12 @@ impl EnemySet {
     }
 }
 
-impl WallPointPosition {
+impl WallPoint {
     pub(crate) fn from_cursor(cursor: &mut Cursor) -> Result<Self> {
         Ok(Self {
-            group_id: next_token_u32_or(cursor, "WallPointPosition group_id")?,
-            time: CommandTime::from_cursor(cursor, "WallPointPosition time")?,
-            x_position: next_token_i32_or(cursor, "WallPointPosition x_position")?,
+            group_id: next_token_u32_or(cursor, "WallPoint group_id")?,
+            time: CommandTime::from_cursor(cursor, "WallPoint time")?,
+            x_position: next_token_i32_or(cursor, "WallPoint x_position")?,
         })
     }
 }

@@ -21,7 +21,7 @@ pub struct BpmDefinition {
     pub maximum: u32,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Default)]
 pub struct MeterDefinition {
     /// Time signature numerator, number of beats in a measure.
     pub num_beats: u32,
@@ -211,7 +211,7 @@ pub struct BulletPalette {
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Btp;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Default)]
 pub struct CommandTime {
     pub measure: u32,
     pub offset: u32,
@@ -271,7 +271,7 @@ pub struct EnemySet {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub struct WallPointPosition {
+pub struct WallPoint {
     pub group_id: u32,
     pub time: CommandTime,
     pub x_position: i32,
