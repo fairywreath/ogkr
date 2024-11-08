@@ -202,7 +202,7 @@ pub struct BulletPalette {
     pub ty: Option<BulletType>,
 
     /// +/- x position offset is applied on random from zero to this value.
-    pub random_position_offset: Option<u32>,
+    pub random_position_offset: Option<i32>,
 
     pub damage_type: Option<BulletDamageType>,
 }
@@ -282,6 +282,17 @@ pub struct LanePoint {
     pub group_id: u32,
     pub time: CommandTime,
     pub x_position: i32,
+}
+
+// XXX FIXME: Remove `EnemyLanePoint`.
+impl From<EnemyLanePoint> for LanePoint {
+    fn from(point: EnemyLanePoint) -> Self {
+        Self {
+            group_id: point.group_id,
+            time: point.time,
+            x_position: point.x_position,
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]

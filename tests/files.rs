@@ -1,8 +1,12 @@
-use ogkr_rs::{lex::tokenize, parse::parse_tokens};
+use ogkr_rs::{
+    lex::tokenize,
+    parse::{analysis::parse_raw_ogkr, raw::parse_tokens},
+};
 
 fn test_file(source: &str) {
     let tokens = tokenize(source).expect("must be tokenized");
-    let _raw_ogkr = parse_tokens(tokens).expect("must be parsed");
+    let raw_ogkr = parse_tokens(tokens).expect("must be parsed");
+    let _ogkr = parse_raw_ogkr(raw_ogkr).expect("must be parsed");
 }
 
 #[test]

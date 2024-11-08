@@ -451,7 +451,7 @@ impl BulletPalette {
                 let size = BulletSize::from_cursor(cursor)?;
                 let ty = BulletType::from_cursor(cursor)?;
                 let random_position_offset =
-                    next_token_u32_or(cursor, "BulletPalette random_position_offset")?;
+                    next_token_i32_or(cursor, "BulletPalette random_position_offset")?;
 
                 (Some(size), Some(ty), Some(random_position_offset), None)
             };
