@@ -1,5 +1,5 @@
 [package]
-name = "ogkr-rs"
+name = "ogkr"
 version = "0.1.0"
 edition = "2021"
 

@@ -1,4 +1,4 @@
-use ogkr_rs::{
+use ogkr::{
     lex::tokenize,
     parse::{analysis::parse_raw_ogkr, raw::parse_tokens},
 };
