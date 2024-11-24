@@ -623,16 +623,17 @@ impl HoldNote {
 
 #[derive(Clone, Debug)]
 pub struct Track {
-    pub lanes_left: BTreeMap<TimingPoint, LaneId>,
-    pub lanes_center: BTreeMap<TimingPoint, LaneId>,
-    pub lanes_right: BTreeMap<TimingPoint, LaneId>,
+    // XXX: Maybe this is not the best representation for lanes.
+    pub lanes_left: BTreeMap<TimingPoint, Vec<LaneId>>,
+    pub lanes_center: BTreeMap<TimingPoint, Vec<LaneId>>,
+    pub lanes_right: BTreeMap<TimingPoint, Vec<LaneId>>,
 
     pub colorful_lanes: BTreeMap<TimingPoint, ColorfulLaneId>,
 
     pub walls_left: BTreeMap<TimingPoint, LaneId>,
     pub walls_right: BTreeMap<TimingPoint, LaneId>,
 
-    pub enemy_lanes: BTreeMap<TimingPoint, LaneId>,
+    pub enemy_lanes: BTreeMap<TimingPoint, Vec<LaneId>>,
 
     // pub lanes_all: BTreeMap<TimingPoint, LaneId>,
     pub beams: BTreeMap<TimingPoint, BeamId>,
@@ -694,7 +695,7 @@ impl Track {
     fn map_lanes(
         lanes: Vec<LaneSection>,
         lane_type: LaneType,
-    ) -> Result<(BTreeMap<TimingPoint, LaneId>, HashMap<LaneId, Lane>)> {
+    ) -> Result<(BTreeMap<TimingPoint, Vec<LaneId>>, HashMap<LaneId, Lane>)> {
         let lanes_data = lanes
             .into_iter()
             .try_fold(HashMap::new(), |mut m, lane_section| {
@@ -704,14 +705,17 @@ impl Track {
                     log::warn!("Internal error: found duplicate lane ID {:?}, previous lane with this ID be ignored", lane.id);
                 }
                 m.insert(lane.id, lane);
+
                 Ok(m)
             })?;
 
         let lanes_sorted = lanes_data
             .values()
             .try_fold(BTreeMap::new(), |mut m, lane| {
-                // XXX FIXME: remove unwrap here and return Err if required.
-                m.insert(lane.points.first().unwrap().time, lane.id);
+                m.entry(lane.points.first().unwrap().time)
+                    .or_insert_with(Vec::new)
+                    .push(lane.id);
+
                 Ok(m)
             })?;
 
