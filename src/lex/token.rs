@@ -483,7 +483,8 @@ impl BpmChange {
     pub(crate) fn from_cursor(cursor: &mut Cursor) -> Result<Self> {
         Ok(Self {
             time: CommandTime::from_cursor(cursor, "BpmChange time")?,
-            bpm: next_token_u32_or(cursor, "BpmChange bpm")?,
+            // XXX TODO: BPMs are floats, store them as floats.
+            bpm: next_token_f32_or(cursor, "BpmChange bpm")? as u32,
         })
     }
 }
@@ -588,7 +589,9 @@ impl Bullet {
             time: CommandTime::from_cursor(cursor, "Bullet time")?,
             x_position: next_token_i32_or(cursor, "Bullet x_position")?,
 
-            // XXX FIXME: Older versions damage type is specified in the palette list.
+            // XXX FIXME: Older versions damage type is specified in the palette list, newer ones
+            // are specified here.
+            // Properly support both.
             // damage_type: BulletDamageType::from_cursor(cursor)?,
             damage_type: BulletDamageType::Normal,
         })

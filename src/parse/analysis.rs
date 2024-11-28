@@ -421,7 +421,10 @@ impl From<command::LaneEvent> for LaneBlock {
 #[derive(Clone, Debug)]
 pub struct Bullet {
     pub palette_id: BulletPaletteId,
+
+    /// End position of the bullet if the player is not the target.
     pub position: TrackPosition,
+
     pub damage_type: BulletDamageType,
 }
 
@@ -984,7 +987,7 @@ impl Notes {
 #[derive(Clone, Debug)]
 pub struct Bullets {
     pub bullet_palette_list: HashMap<BulletPaletteId, BulletPalette>,
-    pub bullets: BTreeMap<TimingPoint, Bullet>,
+    pub bullets: BTreeMap<TimingPoint, Vec<Bullet>>,
 }
 
 impl Bullets {
@@ -1001,7 +1004,9 @@ impl Bullets {
         let bullets = bullets.into_iter().try_fold(BTreeMap::new(), |mut m, b| {
             let bullet = Bullet::from(b);
             if bullet_palette_list.contains_key(&bullet.palette_id) {
-                m.insert(bullet.position.time, bullet);
+                m.entry(bullet.position.time)
+                    .or_insert_with(Vec::new)
+                    .push(bullet);
                 Ok(m)
             } else {
                 Err(ParseError::SemanticError(format!(
@@ -1015,6 +1020,15 @@ impl Bullets {
             bullet_palette_list,
             bullets,
         })
+    }
+
+    pub fn get_bullet_palette(&self, id: &BulletPaletteId) -> Option<&BulletPalette> {
+        self.bullet_palette_list.get(id)
+    }
+
+    /// Returns iterator of bullets sorted by time.
+    pub fn all_bullets(&self) -> impl Iterator<Item = &Bullet> {
+        self.bullets.values().flatten()
     }
 }
 
@@ -1123,6 +1137,26 @@ impl From<command::ClickSound> for ClickSound {
 }
 
 #[derive(Clone, Debug)]
+pub struct ExtraMetadata {
+    pub num_measures: u32,
+}
+
+impl ExtraMetadata {
+    fn new(track: &Track, notes: &Notes, bullets: &Bullets) -> Self {
+        // XXX TODO: Properly check from all lanes, notes and bullets.
+        let num_measures = track
+            .walls_left
+            .last_key_value()
+            .unwrap()
+            .0
+            .measure
+            .max(track.walls_right.last_key_value().unwrap().0.measure);
+
+        Self { num_measures }
+    }
+}
+
+#[derive(Clone, Debug)]
 pub struct Ogkr {
     pub header: Header,
     pub composition: Composition,
@@ -1131,6 +1165,7 @@ pub struct Ogkr {
     pub bullets: Bullets,
     pub click_sounds: Vec<ClickSound>,
     pub enemy_wave_assignment: EnemyWaveAssignment,
+    pub extra_metadata: ExtraMetadata,
 }
 
 impl Ogkr {
@@ -1142,6 +1177,7 @@ impl Ogkr {
         let bullets = Bullets::from_raw(raw.bullet_pallete_list, raw.bullets)?;
         let click_sounds = Self::map_click_sounds(raw.click_sounds);
         let enemy_wave_assignment = raw.enemy_wave_assignment;
+        let extra_metadata = ExtraMetadata::new(&track, &notes, &bullets);
 
         Ok(Self {
             header,
@@ -1151,6 +1187,7 @@ impl Ogkr {
             bullets,
             click_sounds,
             enemy_wave_assignment,
+            extra_metadata,
         })
     }
 
