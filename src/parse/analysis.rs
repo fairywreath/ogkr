@@ -428,13 +428,21 @@ pub struct Bullet {
     pub damage_type: BulletDamageType,
 }
 
-impl From<command::Bullet> for Bullet {
-    fn from(bullet: command::Bullet) -> Self {
-        Self {
+impl Bullet {
+    fn from_bullet_command(bullet: command::Bullet, palette: &BulletPalette) -> Result<Self> {
+        let damage_type = bullet
+            .damage_type
+            .or_else(|| palette.damage_type)
+            .ok_or_else(|| {
+                ParseError::SyntaxError(
+                    "Bullet damage type is not specified in either bullet or palette".to_string(),
+                )
+            })?;
+        Ok(Self {
             palette_id: BulletPaletteId(bullet.pallete_id),
             position: TrackPosition::from_command_info(bullet.time, bullet.x_position, 0),
-            damage_type: bullet.damage_type,
-        }
+            damage_type,
+        })
     }
 }
 
@@ -624,6 +632,7 @@ impl HoldNote {
     }
 }
 
+/// Physical track layout.
 #[derive(Clone, Debug)]
 pub struct Track {
     // XXX: Maybe this is not the best representation for lanes.
@@ -833,6 +842,27 @@ impl Track {
 
         Ok((beams_sorted, beams_data))
     }
+
+    pub fn highest_measure(&self) -> Option<u32> {
+        // self.lanes_left
+        //     .keys()
+        //     .chain(self.lanes_center.keys())
+        //     .chain(self.lanes_right.keys())
+        //     .chain(self.colorful_lanes.keys())
+        //     .chain(self.walls_left.keys())
+        //     .chain(self.walls_right.keys())
+        //     .chain(self.enemy_lanes.keys())
+        //     .chain(self.beams.keys())
+        //     .chain(self.oblique_beams.keys())
+        //     .map(|tp| tp.measure)
+        //     .max()
+        //
+        self.lanes_data
+            .values()
+            .flat_map(|lane| lane.points.iter())
+            .map(|tp| tp.time.measure)
+            .max()
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -982,6 +1012,16 @@ impl Notes {
             Ok(m)
         })
     }
+
+    pub fn highest_measure(&self) -> Option<u32> {
+        self.taps
+            .keys()
+            .chain(self.holds.keys())
+            .chain(self.bells.keys())
+            .chain(self.flicks.keys())
+            .map(|tp| tp.measure)
+            .max()
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -1002,16 +1042,17 @@ impl Bullets {
         });
 
         let bullets = bullets.into_iter().try_fold(BTreeMap::new(), |mut m, b| {
-            let bullet = Bullet::from(b);
-            if bullet_palette_list.contains_key(&bullet.palette_id) {
+            let palette_id = BulletPaletteId(b.pallete_id.clone());
+            if let Some(palette) = bullet_palette_list.get(&palette_id) {
+                let bullet = Bullet::from_bullet_command(b, palette)?;
                 m.entry(bullet.position.time)
                     .or_insert_with(Vec::new)
                     .push(bullet);
                 Ok(m)
             } else {
                 Err(ParseError::SemanticError(format!(
-                    "Bullet {:?} uses invalid palette id {:?}",
-                    &bullet, &bullet.palette_id
+                    "Bullet commend {:?} invalid palette id {:?}",
+                    &b, &palette_id
                 )))
             }
         })?;
@@ -1029,6 +1070,10 @@ impl Bullets {
     /// Returns iterator of bullets sorted by time.
     pub fn all_bullets(&self) -> impl Iterator<Item = &Bullet> {
         self.bullets.values().flatten()
+    }
+
+    fn highest_measure(&self) -> Option<u32> {
+        self.bullets.keys().map(|tp| tp.measure).max()
     }
 }
 
@@ -1143,14 +1188,13 @@ pub struct ExtraMetadata {
 
 impl ExtraMetadata {
     fn new(track: &Track, notes: &Notes, bullets: &Bullets) -> Self {
-        // XXX TODO: Properly check from all lanes, notes and bullets.
         let num_measures = track
-            .walls_left
-            .last_key_value()
-            .unwrap()
-            .0
-            .measure
-            .max(track.walls_right.last_key_value().unwrap().0.measure);
+            .highest_measure()
+            .into_iter()
+            .chain(notes.highest_measure())
+            .chain(bullets.highest_measure())
+            .max()
+            .unwrap_or(0);
 
         Self { num_measures }
     }

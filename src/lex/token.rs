@@ -584,16 +584,22 @@ impl LaneEvent {
 
 impl Bullet {
     pub(crate) fn from_cursor(cursor: &mut Cursor) -> Result<Self> {
-        Ok(Self {
-            pallete_id: next_token_or(cursor, "Bullet pallete_id")?.to_string(),
-            time: CommandTime::from_cursor(cursor, "Bullet time")?,
-            x_position: next_token_i32_or(cursor, "Bullet x_position")?,
+        let pallete_id = next_token_or(cursor, "Bullet pallete_id")?.to_string();
+        let time = CommandTime::from_cursor(cursor, "Bullet time")?;
+        let x_position = next_token_i32_or(cursor, "Bullet x_position")?;
 
-            // XXX FIXME: Older versions damage type is specified in the palette list, newer ones
-            // are specified here.
-            // Properly support both.
-            // damage_type: BulletDamageType::from_cursor(cursor)?,
-            damage_type: BulletDamageType::Normal,
+        let damage_type = BulletDamageType::from_str(cursor.peek_token().unwrap_or(""))
+            .ok()
+            .map(|damage| {
+                cursor.next_token();
+                damage
+            });
+
+        Ok(Self {
+            pallete_id,
+            time,
+            x_position,
+            damage_type,
         })
     }
 }

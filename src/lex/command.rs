@@ -361,7 +361,7 @@ pub struct Bullet {
     pub pallete_id: String,
     pub time: CommandTime,
     pub x_position: i32,
-    pub damage_type: BulletDamageType,
+    pub damage_type: Option<BulletDamageType>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
